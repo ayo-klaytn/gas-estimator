@@ -1,4 +1,6 @@
 // src/app/page.tsx
+'use client';
+
 import dynamic from 'next/dynamic';
 
 // Dynamically import TransactionSimulator with no SSR
