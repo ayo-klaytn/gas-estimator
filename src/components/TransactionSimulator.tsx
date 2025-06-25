@@ -266,7 +266,7 @@ export default function TransactionSimulator() {
             <button
               onClick={simulateTransaction}
               disabled={loading || !contractAddress || !abi || !selectedFunction}
-              className="w-full bg-kaia-gradient text-white font-semibold py-4 px-8 rounded-xl hover:shadow-lg hover:-translate-y-1 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-3"
+              className="w-full bg-kaia-gradient text-black font-semibold py-4 px-8 rounded-xl hover:shadow-lg hover:-translate-y-1 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-3"
             >
               {loading && <Loader2 className="animate-spin" size={20} />}
               Re-calculate Gas Estimation
