@@ -13,9 +13,14 @@ import '@rainbow-me/rainbowkit/styles.css';
 
 const inter = Inter({ subsets: ['latin'] });
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5, // 5 minutes
+    },
+  },
+});
 
-// Custom theme for RainbowKit with better contrast
 const customTheme = lightTheme({
   accentColor: '#ffffff',
   accentColorForeground: '#16a085',
@@ -37,6 +42,10 @@ export default function RootLayout({
 
   return (
     <html lang="en">
+      <head>
+        <title>Kaia Gas Simulator</title>
+        <meta name="description" content="Real-time gas estimation for Kaia blockchain transactions" />
+      </head>
       <body className={inter.className}>
         {mounted ? (
           <WagmiProvider config={config}>
