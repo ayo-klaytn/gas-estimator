@@ -2,6 +2,7 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
+import * as React from 'react';
 import { ethers } from 'ethers';
 import { useAccount } from 'wagmi';
 import { Loader2 } from 'lucide-react';
@@ -26,7 +27,8 @@ export default function TransactionSimulator() {
   const [results, setResults] = useState<SimulationResult | null>(null);
   const [error, setError] = useState('');
 
-  const networks: Record<string, NetworkConfig> = {
+  // Move networks inside useMemo to prevent useCallback dependency issues
+  const networks = React.useMemo(() => ({
     mainnet: {
       name: 'Kaia Mainnet',
       rpc: process.env.NEXT_PUBLIC_KAIA_MAINNET_RPC || 'https://public-en-cypress.klaytn.net',
@@ -39,7 +41,7 @@ export default function TransactionSimulator() {
       symbol: 'KAIA',
       chainId: 1001,
     },
-  };
+  }), []);
 
   const parseABI = useCallback((abiText: string) => {
     try {
@@ -49,7 +51,7 @@ export default function TransactionSimulator() {
       }
 
       const parsedAbi = JSON.parse(abiText);
-      const contractFunctions = parsedAbi.filter((item: any) => 
+      const contractFunctions = parsedAbi.filter((item: ContractFunction) => 
         item.type === 'function' && 
         item.stateMutability !== 'view' && 
         item.stateMutability !== 'pure'
@@ -60,8 +62,9 @@ export default function TransactionSimulator() {
       setSelectedFunction(null);
       setFunctionParams({});
       setResults(null); // Clear previous results
-    } catch (err: any) {
-      setError(`Invalid ABI JSON: ${err.message}`);
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      setError(`Invalid ABI JSON: ${errorMessage}`);
       setFunctions([]);
     }
   }, []);
@@ -115,12 +118,13 @@ export default function TransactionSimulator() {
       setLoading(true);
       setError('');
 
+      // @ts-ignore
       const provider = new ethers.JsonRpcProvider(networks[selectedNetwork].rpc);
       const parsedAbi = JSON.parse(abi);
       const contract = new ethers.Contract(contractAddress, parsedAbi, provider);
 
       // Collect function parameters
-      const params: any[] = [];
+      const params: unknown[] = [];
       selectedFunction.inputs.forEach((input, index) => {
         const paramValue = functionParams[index];
         if (paramValue && paramValue.trim() !== '') {
@@ -176,17 +180,19 @@ export default function TransactionSimulator() {
         gasPrice: ethers.formatUnits(gasPrice, 'gwei'),
         estimatedCostKaia: parseFloat(estimatedCostKaia).toFixed(8),
         estimatedCostUSD: estimatedCostUSD,
+        // @ts-ignore
         symbol: networks[selectedNetwork].symbol
       });
 
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to simulate transaction';
       console.error('Auto-simulation error:', err);
-      setError(err.message || 'Failed to simulate transaction');
+      setError(errorMessage);
       setResults(null);
     } finally {
       setLoading(false);
     }
-  }, [contractAddress, abi, selectedFunction, functionParams, fromAddress, address, selectedNetwork, networks]);
+  }, [contractAddress, abi, selectedFunction, functionParams, fromAddress, address, selectedNetwork]);
 
   // Auto-simulate when key dependencies change
   useEffect(() => {
@@ -249,7 +255,7 @@ export default function TransactionSimulator() {
             <button
               onClick={simulateTransaction}
               disabled={loading || !contractAddress || !abi || !selectedFunction}
-              className="w-full bg-kaia-gradient text-black font-semibold py-4 px-8 rounded-xl hover:shadow-lg hover:-translate-y-1 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-3"
+              className="w-full bg-kaia-gradient text-white font-semibold py-4 px-8 rounded-xl hover:shadow-lg hover:-translate-y-1 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-3"
             >
               {loading && <Loader2 className="animate-spin" size={20} />}
               Re-calculate Gas Estimation
