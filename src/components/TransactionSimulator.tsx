@@ -12,7 +12,14 @@ import NetworkSelector from './NetworkSelector';
 import ContractForm from './ContractForm';
 import FunctionParameters from './FunctionParameters';
 import Results from './Results';
-import { ContractFunction, SimulationResult, NetworkConfig } from '@/types';
+import { ContractFunction, SimulationResult } from '@/types';
+
+interface NetworkConfig {
+  name: string;
+  rpc: string;
+  symbol: string;
+  chainId: number;
+}
 
 export default function TransactionSimulator() {
   const { address } = useAccount();
@@ -28,7 +35,7 @@ export default function TransactionSimulator() {
   const [error, setError] = useState('');
 
   // Move networks inside useMemo to prevent useCallback dependency issues
-  const networks = React.useMemo(() => ({
+  const networks = React.useMemo<Record<string, NetworkConfig>>(() => ({
     mainnet: {
       name: 'Kaia Mainnet',
       rpc: process.env.NEXT_PUBLIC_KAIA_MAINNET_RPC || 'https://public-en-cypress.klaytn.net',
@@ -118,7 +125,6 @@ export default function TransactionSimulator() {
       setLoading(true);
       setError('');
 
-      // @ts-ignore
       const provider = new ethers.JsonRpcProvider(networks[selectedNetwork].rpc);
       const parsedAbi = JSON.parse(abi);
       const contract = new ethers.Contract(contractAddress, parsedAbi, provider);
@@ -154,33 +160,38 @@ export default function TransactionSimulator() {
       const estimatedCostWei = gasEstimate * gasPrice;
       const estimatedCostKaia = ethers.formatEther(estimatedCostWei);
 
-      // Get KAIA price from Kaiascan API
-      let kaiaPriceUSD = 0.15; // Temporary fallback
+      // Get KAIA price from Netlify function
+      let kaiaPriceUSD = null;
       try {
         const response = await fetch('/.netlify/functions/kaia-price');
         if (response.ok) {
           const data = await response.json();
           if (data.price && data.price > 0) {
             kaiaPriceUSD = data.price;
-            console.log(`KAIA price fetched: ${kaiaPriceUSD} from ${data.source}`);
+            console.log(`KAIA price fetched: $${kaiaPriceUSD} from ${data.source}`);
           } else {
-            console.warn('Invalid price data from API, using fallback');
+            throw new Error('Invalid price data from API');
           }
         } else {
-          console.warn('Failed to fetch KAIA price from API, using fallback');
+          const errorData = await response.json();
+          throw new Error(`API Error: ${errorData.message}`);
         }
       } catch (e) {
-        console.warn('Error fetching KAIA price from API:', e);
+        const errorMessage = e instanceof Error ? e.message : 'Unknown error';
+        console.error('Failed to fetch KAIA price:', e);
+        setError(`Gas estimation completed, but failed to fetch current KAIA price: ${errorMessage}`);
+        // Don't calculate USD cost if price fetch fails
       }
 
-      const estimatedCostUSD = (parseFloat(estimatedCostKaia) * kaiaPriceUSD).toFixed(6);
+      const estimatedCostUSD = kaiaPriceUSD 
+        ? (parseFloat(estimatedCostKaia) * kaiaPriceUSD).toFixed(6)
+        : 'Price unavailable';
 
       setResults({
         gasEstimate: gasEstimate.toString(),
         gasPrice: ethers.formatUnits(gasPrice, 'gwei'),
         estimatedCostKaia: parseFloat(estimatedCostKaia).toFixed(8),
         estimatedCostUSD: estimatedCostUSD,
-        // @ts-ignore
         symbol: networks[selectedNetwork].symbol
       });
 
@@ -192,7 +203,7 @@ export default function TransactionSimulator() {
     } finally {
       setLoading(false);
     }
-  }, [contractAddress, abi, selectedFunction, functionParams, fromAddress, address, selectedNetwork]);
+  }, [contractAddress, abi, selectedFunction, functionParams, fromAddress, address, selectedNetwork, networks]);
 
   // Auto-simulate when key dependencies change
   useEffect(() => {
