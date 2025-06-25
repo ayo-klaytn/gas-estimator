@@ -24,7 +24,7 @@ yarn-error.log*
 .netlify/
 
 # Vercel 
-.vercel
+.vercel/
 
 # IDE
 .vscode/
