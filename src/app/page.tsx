@@ -1,27 +1,23 @@
 // src/app/page.tsx
-'use client';
+import dynamic from 'next/dynamic';
+import ClientOnly from '@/components/ClientOnly';
 
-import { useEffect, useState } from 'react';
-import TransactionSimulator from '@/components/TransactionSimulator';
+const Web3Provider = dynamic(() => import('@/components/Web3Provider'), {
+  ssr: false,
+});
+
+const TransactionSimulator = dynamic(() => import('@/components/TransactionSimulator'), {
+  ssr: false,
+});
 
 export default function Home() {
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  if (!mounted) {
-    return (
-      <div className="min-h-screen bg-kaia-gradient flex items-center justify-center">
-        <div className="text-white text-xl">Loading Kaia Gas Simulator...</div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-kaia-gradient">
-      <TransactionSimulator />
+      <ClientOnly>
+        <Web3Provider>
+          <TransactionSimulator />
+        </Web3Provider>
+      </ClientOnly>
     </div>
   );
 }
