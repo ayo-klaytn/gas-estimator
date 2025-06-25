@@ -7,6 +7,7 @@ import { WagmiProvider } from 'wagmi';
 import { RainbowKitProvider, lightTheme } from '@rainbow-me/rainbowkit';
 import { QueryClientProvider, QueryClient } from '@tanstack/react-query';
 import { config } from '@/lib/wagmi';
+import { useEffect, useState } from 'react';
 
 import '@rainbow-me/rainbowkit/styles.css';
 
@@ -14,12 +15,13 @@ const inter = Inter({ subsets: ['latin'] });
 
 const queryClient = new QueryClient();
 
-// Custom green theme for RainbowKit
+// Custom theme for RainbowKit with better contrast
 const customTheme = lightTheme({
-  accentColor: 'green',
-  accentColorForeground: 'white',
+  accentColor: '#ffffff',
+  accentColorForeground: '#16a085',
   borderRadius: 'medium',
   fontStack: 'system',
+  overlayBlur: 'small',
 });
 
 export default function RootLayout({
@@ -27,16 +29,28 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   return (
     <html lang="en">
       <body className={inter.className}>
-        <WagmiProvider config={config}>
-          <QueryClientProvider client={queryClient}>
-            <RainbowKitProvider theme={customTheme}>
-              {children}
-            </RainbowKitProvider>
-          </QueryClientProvider>
-        </WagmiProvider>
+        {mounted ? (
+          <WagmiProvider config={config}>
+            <QueryClientProvider client={queryClient}>
+              <RainbowKitProvider theme={customTheme}>
+                {children}
+              </RainbowKitProvider>
+            </QueryClientProvider>
+          </WagmiProvider>
+        ) : (
+          <div className="min-h-screen bg-kaia-gradient flex items-center justify-center">
+            <div className="text-white text-xl">Loading...</div>
+          </div>
+        )}
       </body>
     </html>
   );
