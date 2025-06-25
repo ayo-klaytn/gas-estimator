@@ -4,6 +4,11 @@ import { Inter } from 'next/font/google';
 
 const inter = Inter({ subsets: ['latin'] });
 
+export const metadata = {
+  title: 'Kaia Gas Simulator',
+  description: 'Real-time gas estimation for Kaia blockchain transactions',
+};
+
 export default function RootLayout({
   children,
 }: {
@@ -11,10 +16,6 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <head>
-        <title>Kaia Gas Simulator</title>
-        <meta name="description" content="Real-time gas estimation for Kaia blockchain transactions" />
-      </head>
       <body className={inter.className}>
         {children}
       </body>

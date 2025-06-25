@@ -163,7 +163,7 @@ export default function TransactionSimulator() {
       // Get KAIA price from Netlify function
       let kaiaPriceUSD = null;
       try {
-        const response = await fetch('/.netlify/functions/kaia-price');
+        const response = await fetch('/api/kaia-price');
         if (response.ok) {
           const data = await response.json();
           if (data.price && data.price > 0) {
